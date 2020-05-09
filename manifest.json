@@ -1,0 +1,6 @@
+{
+  "name": "Text to Logic Tree",
+  "id": "840379982613184293",
+  "api": "1.0.0",
+  "main": "./dist/bundle.js"
+}
