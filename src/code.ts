@@ -1,9 +1,18 @@
 const inputText: TextNode = getTextFromSelection();
-const inputDict: { [key: string]: {} } = {};
+const inputHash: { [key: string]: {} } = {};
 let processingKeyArray: Array<string> = [];
 
+const elementHeight = 100;
+const marginHeight = 50;
+let emptyHashNum = 0;
+
 if (inputText != null) {
-  convertTextIntoDict(inputText.characters);
+  convertTextIntoHash(inputText.characters);
+}
+
+for (let key in inputHash) {
+  const targetHash = inputHash[key];
+  drawTree(targetHash);
 }
 
 figma.closePlugin();
@@ -23,28 +32,27 @@ function getTextFromSelection() {
   return null;
 }
 
-
-function convertTextIntoDict(chara: string) {
+function convertTextIntoHash(chara: string) {
   const charaSplitArray: Array<string> = chara.split('\n');
   
   charaSplitArray.forEach(line => {
-    addToDict(line);
+    addToHash(line);
   });
-  console.log(inputDict);
+  console.log(inputHash);
 }
 
-function addToDict(line: string) {
+function addToHash(line: string) {
   const lineSplitArray = line.split('- ');
   const indent = Number(lineSplitArray[0].length) / 2;
   const key = lineSplitArray[1];
 
   if (indent === 0) {
     processingKeyArray = [key];
-    inputDict[key] = {};
+    inputHash[key] = {};
   }
   else {
     deleteRedundantElem(indent);
-    addKeyToDict(key, indent);
+    addKeyToHash(key, indent);
   }
   console.log("processingKeyArray: " + processingKeyArray);
 }
@@ -55,52 +63,82 @@ function deleteRedundantElem(indent: number) {
   }
 }
 
-function addKeyToDict(key: string, indent: number) {
-  let processingDict: { [key: string]: {} } = {};
+function addKeyToHash(key: string, indent: number) {
+  let processingHash: { [key: string]: {} } = {};
   for (let i = 0; i < processingKeyArray.length; i++) {
     if (i === 0) {
-      processingDict = inputDict[processingKeyArray[i]];
+      processingHash = inputHash[processingKeyArray[i]];
     } else {
-      processingDict = processingDict[processingKeyArray[i]];
+      processingHash = processingHash[processingKeyArray[i]];
     }
   }
   processingKeyArray.push(key);
-  processingDict[key] = {};
+  processingHash[key] = {};
 
-  addProcessingDictToDict(indent, processingDict);
+  addProcessingHashToHash(indent, processingHash);
 }
 
-function addProcessingDictToDict(indent: number, targetDict: { [key: string]: {}; }) {
+function addProcessingHashToHash(indent: number, targetHash: { [key: string]: {}; }) {
   switch (indent) {
     case 1:
-      inputDict[processingKeyArray[0]] = targetDict;
+      inputHash[processingKeyArray[0]] = targetHash;
       break;
     case 2:
-      inputDict[processingKeyArray[0]][processingKeyArray[1]] = targetDict;
+      inputHash[processingKeyArray[0]][processingKeyArray[1]] = targetHash;
       break;
     case 3:
-      inputDict[processingKeyArray[0]][processingKeyArray[1]][processingKeyArray[2]] = targetDict;
+      inputHash[processingKeyArray[0]][processingKeyArray[1]][processingKeyArray[2]] = targetHash;
       break;
     case 4:
-      inputDict[processingKeyArray[0]][processingKeyArray[1]][processingKeyArray[2]][processingKeyArray[3]] = targetDict;
+      inputHash[processingKeyArray[0]][processingKeyArray[1]][processingKeyArray[2]][processingKeyArray[3]] = targetHash;
       break;
     case 5:
-      inputDict[processingKeyArray[0]][processingKeyArray[1]][processingKeyArray[2]][processingKeyArray[3]][processingKeyArray[4]] = targetDict;
+      inputHash[processingKeyArray[0]][processingKeyArray[1]][processingKeyArray[2]][processingKeyArray[3]][processingKeyArray[4]] = targetHash;
       break;
     case 6:
-      inputDict[processingKeyArray[0]][processingKeyArray[1]][processingKeyArray[2]][processingKeyArray[3]][processingKeyArray[4]][processingKeyArray[5]] = targetDict;
+      inputHash[processingKeyArray[0]][processingKeyArray[1]][processingKeyArray[2]][processingKeyArray[3]][processingKeyArray[4]][processingKeyArray[5]] = targetHash;
       break;
     case 7:
-      inputDict[processingKeyArray[0]][processingKeyArray[1]][processingKeyArray[2]][processingKeyArray[3]][processingKeyArray[4]][processingKeyArray[5]][processingKeyArray[6]] = targetDict;
+      inputHash[processingKeyArray[0]][processingKeyArray[1]][processingKeyArray[2]][processingKeyArray[3]][processingKeyArray[4]][processingKeyArray[5]][processingKeyArray[6]] = targetHash;
       break;
     case 8:
-      inputDict[processingKeyArray[0]][processingKeyArray[1]][processingKeyArray[2]][processingKeyArray[3]][processingKeyArray[4]][processingKeyArray[5]][processingKeyArray[6]][processingKeyArray[7]] = targetDict;
+      inputHash[processingKeyArray[0]][processingKeyArray[1]][processingKeyArray[2]][processingKeyArray[3]][processingKeyArray[4]][processingKeyArray[5]][processingKeyArray[6]][processingKeyArray[7]] = targetHash;
       break;
     case 9:
-      inputDict[processingKeyArray[0]][processingKeyArray[1]][processingKeyArray[2]][processingKeyArray[3]][processingKeyArray[4]][processingKeyArray[5]][processingKeyArray[6]][processingKeyArray[7]][processingKeyArray[8]] = targetDict;
+      inputHash[processingKeyArray[0]][processingKeyArray[1]][processingKeyArray[2]][processingKeyArray[3]][processingKeyArray[4]][processingKeyArray[5]][processingKeyArray[6]][processingKeyArray[7]][processingKeyArray[8]] = targetHash;
       break;
     default:
       console.log('階層が深すぎて対処できません');
       break;
+  }
+}
+
+function drawTree(targetHash: { [key: string]: {} }) {
+  const height = getHeight(targetHash);
+  console.log(height);
+  // for (let key in targetHash) {
+  //   const childHash = targetHash[key];
+  //   drawTree(childHash);
+  //   console.log(key + " = " + height);
+  // }
+}
+
+function getHeight(targetHash: { [key: string]: {} }) {
+  emptyHashNum = 0;
+  searchEmptyHashRecursively(targetHash);
+  const elemCalcResult = emptyHashNum > 0 ? emptyHashNum * elementHeight : elementHeight;
+  const marginCalcResult = emptyHashNum > 0 ? (emptyHashNum - 1) * marginHeight : 0;
+  return elemCalcResult + marginCalcResult;
+}
+
+function searchEmptyHashRecursively(targetHash: { [key: string]: {}; }) {
+  for (let key in targetHash) {
+    const childHash = targetHash[key];
+    console.log(key);
+    if (Object.keys(childHash).length === 0) {
+      emptyHashNum++;
+      console.log('length 0');
+    }
+    searchEmptyHashRecursively(childHash);
   }
 }
