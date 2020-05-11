@@ -4,15 +4,13 @@ let processingKeyArray: Array<string> = [];
 
 const elementHeight = 100;
 const marginHeight = 50;
-let emptyHashNum = 0;
 
 if (inputText != null) {
   convertTextIntoHash(inputText.characters);
 }
 
 for (let key in inputHash) {
-  const targetHash = inputHash[key];
-  drawTree(targetHash);
+  drawTree(key);
 }
 
 figma.closePlugin();
@@ -113,32 +111,30 @@ function addProcessingHashToHash(indent: number, targetHash: { [key: string]: {}
   }
 }
 
-function drawTree(targetHash: { [key: string]: {} }) {
+function drawTree(key: string) {
+  const targetHash = inputHash[key];
   const height = getHeight(targetHash);
-  console.log(height);
-  // for (let key in targetHash) {
-  //   const childHash = targetHash[key];
-  //   drawTree(childHash);
-  //   console.log(key + " = " + height);
-  // }
+  console.log(key + ' = ' + height);
+
+  for (let key in targetHash) {
+    drawTree(key);
+  }
 }
 
 function getHeight(targetHash: { [key: string]: {} }) {
-  emptyHashNum = 0;
+  let emptyHashNum = 0;
   searchEmptyHashRecursively(targetHash);
   const elemCalcResult = emptyHashNum > 0 ? emptyHashNum * elementHeight : elementHeight;
   const marginCalcResult = emptyHashNum > 0 ? (emptyHashNum - 1) * marginHeight : 0;
   return elemCalcResult + marginCalcResult;
-}
 
-function searchEmptyHashRecursively(targetHash: { [key: string]: {}; }) {
-  for (let key in targetHash) {
-    const childHash = targetHash[key];
-    console.log(key);
-    if (Object.keys(childHash).length === 0) {
-      emptyHashNum++;
-      console.log('length 0');
+  function searchEmptyHashRecursively(targetHash: { [key: string]: {} }) {
+    for (let key in targetHash) {
+      const childHash = targetHash[key];
+      if (Object.keys(childHash).length === 0) {
+        emptyHashNum++;
+      }
+      searchEmptyHashRecursively(childHash);
     }
-    searchEmptyHashRecursively(childHash);
   }
 }
