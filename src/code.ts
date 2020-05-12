@@ -1,5 +1,8 @@
 const NODE_HEIGHT = 100;
+const NODE_WIDTH = 200;
 const MARGIN_HEIGHT = 50;
+const MARGIN_WIDTH = 50;
+const font: TextStyle = figma.getLocalTextStyles()[0];
 
 let inputHash: { [key: string]: {} } = {};
 const inputText: TextNode = getTextFromSelection();
@@ -7,11 +10,16 @@ if (inputText != null) {
   inputHash = convertTextIntoHash(inputText.characters);
 }
 
-for (let key in inputHash) {
-  drawTree(key);
-}
+const fontLoadPromise = figma.loadFontAsync(font.fontName);
 
-figma.closePlugin();
+Promise.all([fontLoadPromise]).then(() => {
+  console.log(inputHash);
+  for (let key in inputHash) {
+    drawTree('root', key, inputHash);
+  }
+  figma.closePlugin();
+});
+
 
 function getTextFromSelection() {
   const selectionArray = figma.currentPage.selection;
@@ -50,7 +58,6 @@ function convertTextIntoHash(chara: string): { [key: string]: {} } {
       deleteRedundantElem(indent);
       addKeyToHash(key, indent);
     }
-    console.log("processingKeyArray: " + processingKeyArray);
   }
 
   function deleteRedundantElem(indent: number) {
@@ -74,10 +81,7 @@ function convertTextIntoHash(chara: string): { [key: string]: {} } {
     addTargetHashToHash(indent, targetHash);
   }
 
-  function addTargetHashToHash(
-    indent: number,
-    targetHash: { [key: string]: {} }
-  ) {
+  function addTargetHashToHash(indent: number, targetHash: { [key: string]: {} }) {
     switch (indent) {
       case 1:
         hash[processingKeyArray[0]] = targetHash;
@@ -86,47 +90,41 @@ function convertTextIntoHash(chara: string): { [key: string]: {} } {
         hash[processingKeyArray[0]][processingKeyArray[1]] = targetHash;
         break;
       case 3:
-        hash[processingKeyArray[0]][processingKeyArray[1]][
-          processingKeyArray[2]
-        ] = targetHash;
+        hash[processingKeyArray[0]][processingKeyArray[1]][processingKeyArray[2]] = targetHash;
         break;
       case 4:
-        hash[processingKeyArray[0]][processingKeyArray[1]][
-          processingKeyArray[2]
-        ][processingKeyArray[3]] = targetHash;
+        hash[processingKeyArray[0]][processingKeyArray[1]][processingKeyArray[2]][
+          processingKeyArray[3]
+        ] = targetHash;
         break;
       case 5:
-        hash[processingKeyArray[0]][processingKeyArray[1]][
-          processingKeyArray[2]
-        ][processingKeyArray[3]][processingKeyArray[4]] = targetHash;
+        hash[processingKeyArray[0]][processingKeyArray[1]][processingKeyArray[2]][
+          processingKeyArray[3]
+        ][processingKeyArray[4]] = targetHash;
         break;
       case 6:
-        hash[processingKeyArray[0]][processingKeyArray[1]][
-          processingKeyArray[2]
-        ][processingKeyArray[3]][processingKeyArray[4]][
-          processingKeyArray[5]
-        ] = targetHash;
+        hash[processingKeyArray[0]][processingKeyArray[1]][processingKeyArray[2]][
+          processingKeyArray[3]
+        ][processingKeyArray[4]][processingKeyArray[5]] = targetHash;
         break;
       case 7:
-        hash[processingKeyArray[0]][processingKeyArray[1]][
-          processingKeyArray[2]
-        ][processingKeyArray[3]][processingKeyArray[4]][processingKeyArray[5]][
-          processingKeyArray[6]
-        ] = targetHash;
+        hash[processingKeyArray[0]][processingKeyArray[1]][processingKeyArray[2]][
+          processingKeyArray[3]
+        ][processingKeyArray[4]][processingKeyArray[5]][processingKeyArray[6]] = targetHash;
         break;
       case 8:
-        hash[processingKeyArray[0]][processingKeyArray[1]][
-          processingKeyArray[2]
-        ][processingKeyArray[3]][processingKeyArray[4]][processingKeyArray[5]][
-          processingKeyArray[6]
-        ][processingKeyArray[7]] = targetHash;
+        hash[processingKeyArray[0]][processingKeyArray[1]][processingKeyArray[2]][
+          processingKeyArray[3]
+        ][processingKeyArray[4]][processingKeyArray[5]][processingKeyArray[6]][
+          processingKeyArray[7]
+        ] = targetHash;
         break;
       case 9:
-        hash[processingKeyArray[0]][processingKeyArray[1]][
-          processingKeyArray[2]
-        ][processingKeyArray[3]][processingKeyArray[4]][processingKeyArray[5]][
-          processingKeyArray[6]
-        ][processingKeyArray[7]][processingKeyArray[8]] = targetHash;
+        hash[processingKeyArray[0]][processingKeyArray[1]][processingKeyArray[2]][
+          processingKeyArray[3]
+        ][processingKeyArray[4]][processingKeyArray[5]][processingKeyArray[6]][
+          processingKeyArray[7]
+        ][processingKeyArray[8]] = targetHash;
         break;
       default:
         console.log("階層が深すぎて対処できません");
@@ -135,22 +133,29 @@ function convertTextIntoHash(chara: string): { [key: string]: {} } {
   }
 }
 
-function drawTree(key: string) {
-  const targetHash = inputHash[key];
-  const height = getHeight(targetHash);
-  console.log(key + " = " + height);
+let depthArray = ["root"];
+function drawTree(parentKey: string, childKey: string, hash: { [key: string]: {} }) {
+  const index = depthArray.indexOf(parentKey);
+  depthArray.splice(index + 1, depthArray.length);
+  depthArray.push(childKey);
+  console.log("after = " + depthArray);
 
-  for (let key in targetHash) {
-    drawTree(key);
+  const targetHash = hash[childKey];
+  const textNode: TextNode = figma.createText();
+  textNode.textStyleId = font.id;
+  textNode.x = calcPosX();
+  textNode.y = calcPosY(targetHash);
+  textNode.characters = childKey;
+
+  for (let nextKey in targetHash) {
+    drawTree(childKey, nextKey, targetHash);
   }
 
-  function getHeight(targetHash: { [key: string]: {} }) {
+  function calcPosY(targetHash: { [key: string]: {} }): number {
     let emptyHashNum = 0;
     searchEmptyHashRecursively(targetHash);
-    const elemCalcResult =
-      emptyHashNum > 0 ? emptyHashNum * NODE_HEIGHT : NODE_HEIGHT;
-    const marginCalcResult =
-      emptyHashNum > 0 ? (emptyHashNum - 1) * MARGIN_HEIGHT : 0;
+    const elemCalcResult = emptyHashNum > 0 ? emptyHashNum * NODE_HEIGHT : NODE_HEIGHT;
+    const marginCalcResult = emptyHashNum > 0 ? (emptyHashNum - 1) * MARGIN_HEIGHT : 0;
     return elemCalcResult + marginCalcResult;
 
     function searchEmptyHashRecursively(targetHash: { [key: string]: {} }) {
@@ -162,5 +167,13 @@ function drawTree(key: string) {
         searchEmptyHashRecursively(childHash);
       }
     }
+  }
+
+  function calcPosX(): number {
+    const depth = depthArray.length - 1;
+    const elemCalcResult = depth > 0 ? depth * NODE_WIDTH : NODE_WIDTH;
+    const marginCalcResult = depth > 0 ? (depth - 1) * MARGIN_WIDTH : 0;
+    console.log(elemCalcResult + marginCalcResult);
+    return elemCalcResult + marginCalcResult;
   }
 }
