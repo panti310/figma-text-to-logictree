@@ -16,6 +16,7 @@ Promise.all([fontLoadPromise]).then(() => {
   console.log(inputHash);
   for (let key in inputHash) {
     drawTree('root', key, inputHash);
+    nodeCount ++;
   }
   figma.closePlugin();
 });
@@ -133,19 +134,32 @@ function convertTextIntoHash(chara: string): { [key: string]: {} } {
   }
 }
 
-let depthArray = ["root"];
+let depthArray: Array<string> = ["root"];
+let nodeHightArray: Array<number> = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+let nodeCount: number = 0; 
 function drawTree(parentKey: string, childKey: string, hash: { [key: string]: {} }) {
+  const targetHash = hash[childKey];
   const index = depthArray.indexOf(parentKey);
   depthArray.splice(index + 1, depthArray.length);
   depthArray.push(childKey);
   console.log("after = " + depthArray);
+  console.log("nodeHightArray.length = " + nodeHightArray.length);
+  console.log("index = " + index);
 
-  const targetHash = hash[childKey];
+  
   const textNode: TextNode = figma.createText();
   textNode.textStyleId = font.id;
   textNode.x = calcPosX();
-  textNode.y = calcPosY(targetHash);
+  textNode.y = calcPosY(targetHash) / 2 + nodeHightArray[index];
   textNode.characters = childKey;
+  
+  if (nodeHightArray[index] !== nodeHightArray[index + 1] &&
+    nodeHightArray[index + 1] > 0) {
+    nodeHightArray[index + 1] = nodeHightArray[index];
+    console.log('飛ばし');
+  }
+  nodeHightArray[index] += calcPosY(targetHash) + MARGIN_HEIGHT;
+  console.log(nodeHightArray);
 
   for (let nextKey in targetHash) {
     drawTree(childKey, nextKey, targetHash);
@@ -173,7 +187,6 @@ function drawTree(parentKey: string, childKey: string, hash: { [key: string]: {}
     const depth = depthArray.length - 1;
     const elemCalcResult = depth > 0 ? depth * NODE_WIDTH : NODE_WIDTH;
     const marginCalcResult = depth > 0 ? (depth - 1) * MARGIN_WIDTH : 0;
-    console.log(elemCalcResult + marginCalcResult);
     return elemCalcResult + marginCalcResult;
   }
 }
