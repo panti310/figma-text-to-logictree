@@ -8,7 +8,7 @@ const NODE_HEIGHT = 200;
 const NODE_WIDTH = 400;
 const MARGIN_HEIGHT = 100;
 const MARGIN_WIDTH = 100;
-const INDENT_SPACE_COUNT = 2;
+const INDENT_SPACE_COUNT = 4;
 const ITEMIZATION_SYMBOL = "- ";
 const ROOT_NODE_NAME = "root";
 const BG_COLOR = "FFFFFF";
@@ -152,6 +152,7 @@ function convertCharaIntoHash(chara: string): { [key: string]: {} } {
 function drawTree(inputHash: { [key: string]: {} }) {
   let processingNodeArray: Array<string> = [];
   let nodeDrawingPosYArray: Array<number> = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+  let prevProcessedNodeDepth = 0;
 
   for (let key in inputHash) {
     drawNodeUnderCurrentNodeRecursively(inputHash, ROOT_NODE_NAME, key);
@@ -177,6 +178,14 @@ function drawTree(inputHash: { [key: string]: {} }) {
       childIndex = currentIndex + 1;
     }
 
+    // １つ前に描画したnodeの下にnodeが無い時は、それ以降の階層の高さを更新する
+    if (currentIndex <= prevProcessedNodeDepth) {
+      for (let i = currentIndex; i < nodeDrawingPosYArray.length; i++) {
+        nodeDrawingPosYArray[i] = nodeDrawingPosYArray[currentIndex];
+      }
+    }
+    prevProcessedNodeDepth = currentIndex;
+
     // テキストを作成する
     // TODO: 背景やスタイルを設定する
     const rectNode: RectangleNode = figma.createRectangle();
@@ -194,19 +203,18 @@ function drawTree(inputHash: { [key: string]: {} }) {
     const treeHeightUnderNode = calctTreeHeightUnderNode(currentHash);
     const currentNodeDrawingPosY = nodeDrawingPosYArray[currentIndex];
     const childNodeDrawingPosY = nodeDrawingPosYArray[childIndex];
-    // 子nodeが歯抜けになっているとそれ以降で位置ズレが生じるため、現nodeに合わせて子nodeのy軸描画位置を更新する
-    if (currentNodeDrawingPosY !== childNodeDrawingPosY && childNodeDrawingPosY > 0) {
-      nodeDrawingPosYArray[childIndex] = currentNodeDrawingPosY;
-    }
     // yの描画位置 = そのnode以下のツリーの高さの中央 + その階層の次の描画位置
     textNode.y = treeHeightUnderNode / 2 + currentNodeDrawingPosY;
     nodeDrawingPosYArray[currentIndex] += treeHeightUnderNode + MARGIN_HEIGHT;
 
+    // 背景用のrectancleの設定
     rectNode.resize(NODE_WIDTH, NODE_HEIGHT);
     rectNode.x = textNode.x;
     rectNode.y = textNode.y;
     const cloneFills = clone(rectNode.fills);
     rectNode.fills = changePaints(cloneFills, BG_COLOR);
+    // rectangleとtextをグループ化
+    figma.group([textNode, rectNode], rectNode.parent);
 
     // 子ツリーを順に描画する
     for (let nextKey in currentHash) {
