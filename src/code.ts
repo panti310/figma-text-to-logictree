@@ -148,10 +148,9 @@ function convertCharaIntoHash(chara: string): { [key: string]: {} } {
 }
 
 function drawTree(inputHash: { [key: string]: {} }) {
-  let parentNodeArray: Array<string> = [ROOT_NODE_NAME];
+  let processingNodeArray: Array<string> = [];
   let nodeDrawingPosYArray: Array<number> = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
 
-  //
   for (let key in inputHash) {
     drawNodeUnderCurrentNodeRecursively(inputHash, ROOT_NODE_NAME, key);
   }
@@ -161,65 +160,78 @@ function drawTree(inputHash: { [key: string]: {} }) {
     parentKey: string,
     currentKey: string
   ) {
-    const currentHash = parentHash[currentKey];
-    const index = parentNodeArray.indexOf(parentKey);
-    parentNodeArray.splice(index + 1, parentNodeArray.length - index, currentKey);
+      const currentHash = parentHash[currentKey];
 
-    // テキストを作成する
-    // TODO: 背景やスタイルを設定する
-    const textNode: TextNode = figma.createText();
-    textNode.characters = currentKey;
-    textNode.textStyleId = font.id;
+      let currentIndex = 0;
+      let childIndex = 1;
+      if (parentKey === ROOT_NODE_NAME) {
+        // root直下なら親に紐付いていないのでcurrentKeyのみに初期化する
+        processingNodeArray = [currentKey];
+      } else {
+        // root直下でなければ親のkeyからindexを取得して、作業中配列を更新する
+        currentIndex = processingNodeArray.indexOf(parentKey) + 1;
+        const deleteNum = processingNodeArray.length - currentIndex;
+        processingNodeArray.splice(currentIndex, deleteNum, currentKey);
+        childIndex = currentIndex + 1;
+      }
 
-    // x軸の描画場所を計算する
-    textNode.x = calcNodeDrawingPosX();
+      // テキストを作成する
+      // TODO: 背景やスタイルを設定する
+      const textNode: TextNode = figma.createText();
+      textNode.characters = currentKey;
+      textNode.textStyleId = font.id;
 
-    // y軸の描画場所を計算する
-    const treeHeightUnderNode = calctTreeHeightUnderNode(currentHash);
-    const currentNodeDrawingPosY = nodeDrawingPosYArray[index];
-    const childNodeDrawingPosY = nodeDrawingPosYArray[index + 1];
-    // 子階層が歯抜けになっている時に小階層のy軸描画位置を現階層に合わせて更新する
-    // 要素がない箇所以降に位置のズレが生じるため、差分を埋める処理が必要となる
-    if (currentNodeDrawingPosY !== childNodeDrawingPosY && childNodeDrawingPosY > 0) {
-      nodeDrawingPosYArray[index + 1] = currentNodeDrawingPosY;
-    }
-    // yの描画位置 = そのnode以下のツリーの高さの中央 + その階層の次の描画位置
-    textNode.y = treeHeightUnderNode / 2 + currentNodeDrawingPosY;
-    nodeDrawingPosYArray[index] += treeHeightUnderNode + MARGIN_HEIGHT;
+      // x軸の描画場所を計算する
+      textNode.x = calcNodeDrawingPosX();
 
-    // 子ツリーを順に描画する
-    for (let nextKey in currentHash) {
-      drawNodeUnderCurrentNodeRecursively(currentHash, currentKey, nextKey);
-    }
+      // y軸の描画場所を計算する
+      const treeHeightUnderNode = calctTreeHeightUnderNode(currentHash);
+      const currentNodeDrawingPosY = nodeDrawingPosYArray[currentIndex];
+      const childNodeDrawingPosY = nodeDrawingPosYArray[childIndex];
+      // 子nodeが歯抜けになっているとそれ以降で位置ズレが生じるため、現nodeに合わせて子nodeのy軸描画位置を更新する
+      if (currentNodeDrawingPosY !== childNodeDrawingPosY && childNodeDrawingPosY > 0) {
+        nodeDrawingPosYArray[childIndex] = currentNodeDrawingPosY;
+      }
+      // yの描画位置 = そのnode以下のツリーの高さの中央 + その階層の次の描画位置
+      textNode.y = treeHeightUnderNode / 2 + currentNodeDrawingPosY;
+      nodeDrawingPosYArray[currentIndex] += treeHeightUnderNode + MARGIN_HEIGHT;
 
-    function calctTreeHeightUnderNode(targetHash: { [key: string]: {} }): number {
-      const emptyTreeCount = getEmptyTreeCount();
-      const nodeCalcResult = emptyTreeCount > 0 ? emptyTreeCount * NODE_HEIGHT : NODE_HEIGHT;
-      const marginCalcResult = emptyTreeCount > 0 ? (emptyTreeCount - 1) * MARGIN_HEIGHT : 0;
-      return nodeCalcResult + marginCalcResult;
+      console.log(processingNodeArray);
+      console.log(nodeDrawingPosYArray);
 
-      function getEmptyTreeCount(): number {
-        let emptyTreeCount = 0;
-        searchEmptyHashRecursively(targetHash);
-        return emptyTreeCount;
+      // 子ツリーを順に描画する
+      for (let nextKey in currentHash) {
+        drawNodeUnderCurrentNodeRecursively(currentHash, currentKey, nextKey);
+      }
 
-        function searchEmptyHashRecursively(targetHash: { [key: string]: {} }) {
-          for (let key in targetHash) {
-            const childHash = targetHash[key];
-            if (Object.keys(childHash).length === 0) {
-              emptyTreeCount++;
+      function calctTreeHeightUnderNode(targetHash: { [key: string]: {} }): number {
+        const emptyTreeCount = getEmptyTreeCount();
+        const nodeCalcResult = emptyTreeCount > 0 ? emptyTreeCount * NODE_HEIGHT : NODE_HEIGHT;
+        const marginCalcResult = emptyTreeCount > 0 ? (emptyTreeCount - 1) * MARGIN_HEIGHT : 0;
+        return nodeCalcResult + marginCalcResult;
+
+        function getEmptyTreeCount(): number {
+          let emptyTreeCount = 0;
+          searchEmptyHashRecursively(targetHash);
+          return emptyTreeCount;
+
+          function searchEmptyHashRecursively(targetHash: { [key: string]: {} }) {
+            for (let key in targetHash) {
+              const childHash = targetHash[key];
+              if (Object.keys(childHash).length === 0) {
+                emptyTreeCount++;
+              }
+              searchEmptyHashRecursively(childHash);
             }
-            searchEmptyHashRecursively(childHash);
           }
         }
       }
-    }
 
-    function calcNodeDrawingPosX(): number {
-      const depth = parentNodeArray.length - 1;
-      const elemCalcResult = depth > 0 ? depth * NODE_WIDTH : NODE_WIDTH;
-      const marginCalcResult = depth > 0 ? (depth - 1) * MARGIN_WIDTH : 0;
-      return elemCalcResult + marginCalcResult;
+      function calcNodeDrawingPosX(): number {
+        const depth = currentIndex + 1;
+        const elemCalcResult = depth * NODE_WIDTH;
+        const marginCalcResult = (depth - 1) * MARGIN_WIDTH;
+        return elemCalcResult + marginCalcResult;
+      }
     }
-  }
 }
