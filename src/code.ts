@@ -4,12 +4,14 @@
 // margin: node間の余白
 // depth: 階層の深さ
 
-const NODE_HEIGHT = 100;
-const NODE_WIDTH = 200;
-const MARGIN_HEIGHT = 50;
-const MARGIN_WIDTH = 50;
+const NODE_HEIGHT = 200;
+const NODE_WIDTH = 400;
+const MARGIN_HEIGHT = 100;
+const MARGIN_WIDTH = 100;
 const INDENT_SPACE_COUNT = 2;
+const ITEMIZATION_SYMBOL = "- ";
 const ROOT_NODE_NAME = "root";
+const BG_COLOR = "FFFFFF";
 
 // スタイルを取得する
 // TODO: 指定できるようにする
@@ -61,8 +63,8 @@ function convertCharaIntoHash(chara: string): { [key: string]: {} } {
   return inputHash;
 
   function addLineToHash(line: string) {
-    // 箇条書きの「- 」を目印にしてlineを分ける
-    const lineSplitArray = line.split("- ");
+    // 箇条書きの記号を目印にしてlineを分ける
+    const lineSplitArray = line.split(ITEMIZATION_SYMBOL);
     // インデント数を算出する
     const indentNum = Number(lineSplitArray[0].length) / INDENT_SPACE_COUNT;
 
@@ -177,9 +179,13 @@ function drawTree(inputHash: { [key: string]: {} }) {
 
     // テキストを作成する
     // TODO: 背景やスタイルを設定する
+    const rectNode: RectangleNode = figma.createRectangle();
     const textNode: TextNode = figma.createText();
     textNode.characters = currentKey;
     textNode.textStyleId = font.id;
+    textNode.resize(NODE_WIDTH, NODE_HEIGHT);
+    textNode.textAlignHorizontal = "CENTER"; 
+    textNode.textAlignVertical = "CENTER"; 
 
     // x軸の描画場所を計算する
     textNode.x = calcNodeDrawingPosX();
@@ -196,8 +202,11 @@ function drawTree(inputHash: { [key: string]: {} }) {
     textNode.y = treeHeightUnderNode / 2 + currentNodeDrawingPosY;
     nodeDrawingPosYArray[currentIndex] += treeHeightUnderNode + MARGIN_HEIGHT;
 
-    console.log(processingNodeArray);
-    console.log(nodeDrawingPosYArray);
+    rectNode.resize(NODE_WIDTH, NODE_HEIGHT);
+    rectNode.x = textNode.x;
+    rectNode.y = textNode.y;
+    const cloneFills = clone(rectNode.fills);
+    rectNode.fills = changePaints(cloneFills, BG_COLOR);
 
     // 子ツリーを順に描画する
     for (let nextKey in currentHash) {
@@ -234,4 +243,33 @@ function drawTree(inputHash: { [key: string]: {} }) {
       return elemCalcResult + marginCalcResult;
     }
   }
+}
+
+/// 以下、便利関数
+function changePaints(paints: Array<any>, color: String) {
+  if (paints !== null && paints.length > 0) {
+    paints.forEach((paint, index) => {
+      paints[index] = changePaint(paint, color);
+    });
+  }
+  return paints;
+}
+
+function changePaint(paint, color: String) {
+  // 単色塗り以外（グラデーション、画像）は対応しない
+  if (paint.type !== "SOLID") {
+    return paint;
+  }
+  // 16進数を10進数に変換した後、0~1の少数に置き換える
+  const rgbArray = [color.slice(0, 2), color.slice(2, 4), color.slice(4, 6)].map(function (str) {
+    return parseInt(str, 16) / 255;
+  });
+  paint.color.r = rgbArray[0];
+  paint.color.g = rgbArray[1];
+  paint.color.b = rgbArray[2];
+  return paint;
+}
+
+function clone(val) {
+  return JSON.parse(JSON.stringify(val));
 }
