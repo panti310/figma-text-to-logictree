@@ -5,7 +5,8 @@
 // depth: 階層の深さ
 
 const NODE_HEIGHT = 200;
-const NODE_WIDTH = 400;
+const NODE_WIDTH = 500;
+const PADDING = 20;
 const MARGIN_HEIGHT = 100;
 const MARGIN_WIDTH = 100;
 const INDENT_SPACE_COUNT = 4;
@@ -192,12 +193,13 @@ function drawTree(inputHash: { [key: string]: {} }) {
     const textNode: TextNode = figma.createText();
     textNode.characters = currentKey;
     textNode.textStyleId = font.id;
-    textNode.resize(NODE_WIDTH, NODE_HEIGHT);
+    textNode.resize(NODE_WIDTH - PADDING * 2, NODE_HEIGHT);
     textNode.textAlignHorizontal = "CENTER"; 
     textNode.textAlignVertical = "CENTER"; 
 
     // x軸の描画場所を計算する
-    textNode.x = calcNodeDrawingPosX();
+    const nodePosX = calcNodeDrawingPosX();
+    textNode.x = nodePosX + PADDING;
 
     // y軸の描画場所を計算する
     const treeHeightUnderNode = calctTreeHeightUnderNode(currentHash);
@@ -209,7 +211,7 @@ function drawTree(inputHash: { [key: string]: {} }) {
 
     // 背景用のrectancleの設定
     rectNode.resize(NODE_WIDTH, NODE_HEIGHT);
-    rectNode.x = textNode.x;
+    rectNode.x = nodePosX;
     rectNode.y = textNode.y;
     const cloneFills = clone(rectNode.fills);
     rectNode.fills = changePaints(cloneFills, BG_COLOR);
