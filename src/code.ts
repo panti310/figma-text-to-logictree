@@ -32,6 +32,7 @@ if (inputText != null) {
       figma.closePlugin();
     })
     .catch(() => {
+      alert('エラーが発生しました');
       figma.closePlugin();
     });
 }
@@ -166,81 +167,77 @@ function drawTree(inputHash: { [key: string]: {} }) {
   ) {
     const currentHash = parentHash[currentKey];
 
-    let currentIndex = 0;
-    let childIndex = 1;
+    let currentDepthIndex = 0;
+    let childDepthIndex = 1;
     if (parentKey === ROOT_NODE_NAME) {
       // root直下なら親に紐付いていないのでcurrentKeyのみに初期化する
       processingNodeArray = [currentKey];
     } else {
       // root直下でなければ親のkeyからindexを取得して、作業中配列を更新する
-      currentIndex = processingNodeArray.indexOf(parentKey) + 1;
-      const deleteNum = processingNodeArray.length - currentIndex;
-      processingNodeArray.splice(currentIndex, deleteNum, currentKey);
-      childIndex = currentIndex + 1;
+      currentDepthIndex = processingNodeArray.indexOf(parentKey) + 1;
+      const deleteNum = processingNodeArray.length - currentDepthIndex;
+      processingNodeArray.splice(currentDepthIndex, deleteNum, currentKey);
+      childDepthIndex = currentDepthIndex + 1;
     }
 
     // １つ前に描画したnodeの下にnodeが無い時は、それ以降の階層の高さを更新する
-    if (currentIndex <= prevProcessedNodeDepth) {
-      for (let i = currentIndex; i < nodeDrawingPosYArray.length; i++) {
-        nodeDrawingPosYArray[i] = nodeDrawingPosYArray[currentIndex];
+    const prevNodeDrawingPosY = nodeDrawingPosYArray[currentDepthIndex];
+    if (currentDepthIndex <= prevProcessedNodeDepth) {
+      for (let i = currentDepthIndex; i < nodeDrawingPosYArray.length; i++) {
+        nodeDrawingPosYArray[i] = prevNodeDrawingPosY;
       }
     }
-    prevProcessedNodeDepth = currentIndex;
+    prevProcessedNodeDepth = currentDepthIndex;
 
-    // テキストを作成する
-    // TODO: 背景やスタイルを設定する
+    // テキストと背景を作成する
     const rectNode: RectangleNode = figma.createRectangle();
     const textNode: TextNode = figma.createText();
+    figma.group([textNode, rectNode], rectNode.parent);
+
+    // テキストの設定
+    const nodePosX = calcNodeDrawingPosX();
+    const treeHeightUnderNode = calctTreeHeightUnderNode(currentHash);
     textNode.characters = currentKey;
     textNode.textStyleId = font.id;
     textNode.resize(NODE_WIDTH - PADDING * 2, NODE_HEIGHT);
     textNode.textAlignHorizontal = "CENTER";
     textNode.textAlignVertical = "CENTER";
-
-    // x軸の描画場所を計算する
-    const nodePosX = calcNodeDrawingPosX();
     textNode.x = nodePosX + PADDING;
+    textNode.y = treeHeightUnderNode / 2 + prevNodeDrawingPosY;
 
-    // y軸の描画場所を計算する
-    const treeHeightUnderNode = calctTreeHeightUnderNode(currentHash);
-    const currentNodeDrawingPosY = nodeDrawingPosYArray[currentIndex];
-    // yの描画位置 = そのnode以下のツリーの高さの中央 + その階層の次の描画位置
-    textNode.y = treeHeightUnderNode / 2 + currentNodeDrawingPosY;
-    nodeDrawingPosYArray[currentIndex] += treeHeightUnderNode + MARGIN_HEIGHT;
+    // 高さの配列を更新する
+    nodeDrawingPosYArray[currentDepthIndex] += treeHeightUnderNode + MARGIN_HEIGHT;
+    const currentNodeDrawingPosY = prevNodeDrawingPosY + treeHeightUnderNode + MARGIN_HEIGHT;
 
-    // 背景用のrectancleの設定
+    // 背景の設定
     rectNode.resize(NODE_WIDTH, NODE_HEIGHT);
     rectNode.x = nodePosX;
     rectNode.y = textNode.y;
     const cloneFills = clone(rectNode.fills);
     rectNode.fills = changePaints(cloneFills, BG_COLOR);
-    // rectangleとtextをグループ化
-    figma.group([textNode, rectNode], rectNode.parent);
 
-    // 線を描画する
+    // 左の横線の作成
     const leftLine = figma.createLine();
     leftLine.resize(MARGIN_WIDTH / 2, 0);
     leftLine.x = nodePosX - MARGIN_WIDTH / 2;
     leftLine.y = textNode.y + NODE_HEIGHT / 2;
 
+    // 子要素があるなら右の横線を作成
     if (Object.keys(currentHash).length > 0) {
       const rightLine = figma.createLine();
       rightLine.resize(MARGIN_WIDTH / 2, 0);
       rightLine.x = nodePosX + NODE_WIDTH;
-      rightLine.y = textNode.y + NODE_HEIGHT / 2;
+      rightLine.y = leftLine.y;
     }
 
+    // 兄弟要素があるなら縦線の作成
     const siblingNum = Object.keys(parentHash).length;
     if (siblingNum > 1) {
       const indexInSibling = Object.keys(parentHash).indexOf(currentKey);
       const isFirstInSibling = indexInSibling === 0;
-      const isLastInSibling = indexInSibling === siblingNum - 1;
-      let verticalLineStartPosY = isFirstInSibling
-        ? textNode.y + NODE_HEIGHT / 2
-        : currentNodeDrawingPosY;
-      let verticalLineEndPosY = isLastInSibling
-        ? textNode.y + NODE_HEIGHT / 2
-        : nodeDrawingPosYArray[currentIndex];
+      const isLastInSibling = indexInSibling >= siblingNum - 1;
+      let verticalLineStartPosY = isFirstInSibling ? leftLine.y : prevNodeDrawingPosY;
+      let verticalLineEndPosY = isLastInSibling ? leftLine.y : currentNodeDrawingPosY;
 
       const verticalLine = figma.createLine();
       verticalLine.resize(verticalLineEndPosY - verticalLineStartPosY, 0);
@@ -248,7 +245,6 @@ function drawTree(inputHash: { [key: string]: {} }) {
       verticalLine.x = leftLine.x;
       verticalLine.y = verticalLineStartPosY;
     }
-    console.log("verticalLine finish");
 
     // 子ツリーを順に描画する
     for (let nextKey in currentHash) {
@@ -279,7 +275,7 @@ function drawTree(inputHash: { [key: string]: {} }) {
     }
 
     function calcNodeDrawingPosX(): number {
-      const depth = currentIndex + 1;
+      const depth = currentDepthIndex + 1;
       const elemCalcResult = depth * NODE_WIDTH;
       const marginCalcResult = (depth - 1) * MARGIN_WIDTH;
       return elemCalcResult + marginCalcResult;
