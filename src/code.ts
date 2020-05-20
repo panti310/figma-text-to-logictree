@@ -4,27 +4,28 @@
 // margin: node間の余白
 // depth: 階層の深さ
 
-const NODE_HEIGHT = 200;
-const NODE_WIDTH = 500;
-const PADDING = 20;
-const MARGIN_HEIGHT = 100;
-const MARGIN_WIDTH = 100;
+// 設定
+const NODE_WIDTH = 200;
+const NODE_HEIGHT = NODE_WIDTH / 2.5;
+const PADDING = NODE_HEIGHT / 10;
+const MARGIN_HEIGHT = 20;
+const MARGIN_WIDTH = 30;
 const INDENT_SPACE_COUNT = 4;
 const ITEMIZATION_SYMBOL = "- ";
 const ROOT_NODE_NAME = "root";
 const BG_COLOR = "FFFFFF";
-
-// スタイルを取得する
-// TODO: 指定できるようにする
-const font: TextStyle = figma.getLocalTextStyles()[0];
+const FONT_NAME: FontName = { family: "Roboto", style: "Regular" };
+const FONT_SIZE = 14;
 
 // 選択中のオブジェクトからテキストを抜き出す
 const inputText: TextNode = getTextNodeFromSelection();
-if (inputText != null) {
+if (inputText === null) {
+  alert("箇条書きのテキストを選択してください");
+} else {
   // テキストをハッシュ化する
   const inputHash: { [key: string]: {} } = convertCharaIntoHash(inputText.characters);
   // フォントを読み込み次第描画する
-  const fontLoadPromise = figma.loadFontAsync(font.fontName);
+  const fontLoadPromise = figma.loadFontAsync(FONT_NAME);
   Promise.all([fontLoadPromise])
     .then(() => {
       // 描画する
@@ -32,7 +33,7 @@ if (inputText != null) {
       figma.closePlugin();
     })
     .catch(() => {
-      alert('エラーが発生しました');
+      alert("エラーが発生しました");
       figma.closePlugin();
     });
 }
@@ -198,7 +199,8 @@ function drawTree(inputHash: { [key: string]: {} }) {
     const nodePosX = calcNodeDrawingPosX();
     const treeHeightUnderNode = calctTreeHeightUnderNode(currentHash);
     textNode.characters = currentKey;
-    textNode.textStyleId = font.id;
+    textNode.fontName = FONT_NAME;
+    textNode.fontSize = FONT_SIZE;
     textNode.resize(NODE_WIDTH - PADDING * 2, NODE_HEIGHT);
     textNode.textAlignHorizontal = "CENTER";
     textNode.textAlignVertical = "CENTER";
