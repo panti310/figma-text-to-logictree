@@ -6,14 +6,15 @@
 
 // 設定
 const NODE_WIDTH = 200;
-const NODE_HEIGHT = NODE_WIDTH / 2.5;
+const NODE_HEIGHT = 80;
 const PADDING = NODE_HEIGHT / 10;
 const MARGIN_HEIGHT = 20;
 const MARGIN_WIDTH = 30;
 const INDENT_SPACE_COUNT = 4;
 const ITEMIZATION_SYMBOL = "- ";
 const ROOT_NODE_NAME = "root";
-const BG_COLOR = "FFFFFF";
+const BG_COLOR = "F9FBFE";
+const TEXT_COLOR = "16325C";
 const FONT_NAME: FontName = { family: "Roboto", style: "Regular" };
 const FONT_SIZE = 14;
 
@@ -201,6 +202,8 @@ function drawTree(inputHash: { [key: string]: {} }) {
     textNode.characters = currentKey;
     textNode.fontName = FONT_NAME;
     textNode.fontSize = FONT_SIZE;
+    const textFills = clone(textNode.fills);
+    textNode.fills = changePaints(textFills, TEXT_COLOR);
     textNode.resize(NODE_WIDTH - PADDING * 2, NODE_HEIGHT);
     textNode.textAlignHorizontal = "CENTER";
     textNode.textAlignVertical = "CENTER";
