@@ -1,3 +1,16 @@
+# 前準備
+
+クローン
+
+`git clone https://github.com/panti310/figma-text-to-logictree.git`
+
+パッケージインストール
+`npm install`
+
+ビルド
+`npm run build`
+
+
 1. こんな感じの箇条書きのテキストを用意する
 ```
 - ユーザーの違い
