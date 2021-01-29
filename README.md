@@ -1,40 +1,38 @@
-Below are the steps to get your plugin running. You can also find instructions at:
+1. こんな感じの箇条書きのテキストを用意する
+```
+- ユーザーの違い
+    - シーン1. 何かを知りたい人
+        - 情報収集
+        - めちゃくちゃ頑張ればシーン2の一部も実現できる
+    - シーン2. 何かをしたい人
+        - 買い物、動画などのエンタメ、コミュニケーションなどあらゆることが対象
+        - シーン1の「情報収集」も内包する
+- 成果物の違い
+    - シーン1. Webサイト
+        - 情報を伝える
+        - 静的
+    - シーン2. Webアプリケーション
+        - 課題を解決する
+            - アプリケーション毎に課題や解決方法が異なる
+            - シーン1の「情報を伝える」も内包する
+            - アプリケーション毎に課題や解決方法が異なる1
+            - シーン1の「情報を伝える」も内包する2
+            - アプリケーション毎に課題や解決方法が異なる3
+            - シーン1の「情報を伝える」も内包する4
+        - 動的
+- 作り手の違い
+    - シーン1. コーダー / プログラマー
+        - 仕様通りのWebページを作る
+        - フロントエンド中心
+    - シーン2. エンジニア
+        - 実現方法の模索など仕様から携わる
+        - フロントエンド、バックエンド
+```
 
-  https://www.figma.com/plugin-docs/setup/
+2. Figmaに貼り付ける
+<img width="487" alt="text" src="https://user-images.githubusercontent.com/5089512/106220090-183b1c00-621e-11eb-951a-9e37854bd551.png">
 
-This plugin template uses Typescript and NPM, two standard tools in creating JavaScript applications.
+3. Pluginを実行する
+<img width="440" alt="tree" src="https://user-images.githubusercontent.com/5089512/106220098-1c673980-621e-11eb-9f4b-e30278c93819.png">
 
-First, download Node.js which comes with NPM. This will allow you to install TypeScript and other
-libraries. You can find the download link here:
-
-  https://nodejs.org/en/download/
-
-Next, install TypeScript using the command:
-
-  npm install -g typescript
-
-Finally, in the directory of your plugin, get the latest type definitions for the plugin API by running:
-
-  npm install --saveDev @figma/plugin-typings
-
-If you are familiar with JavaScript, TypeScript will look very familiar. In fact, valid JavaScript code
-is already valid Typescript code.
-
-TypeScript adds type annotations to variables. This allows code editors such as Visual Studio Code
-to provide information about the Figma API while you are writing code, as well as help catch bugs
-you previously didn't notice.
-
-For more information, visit https://www.typescriptlang.org/
-
-Using TypeScript requires a compiler to convert TypeScript (code.ts) into JavaScript (code.js)
-for the browser to run.
-
-We recommend writing TypeScript code using Visual Studio code:
-
-1. Download Visual Studio Code if you haven't already: https://code.visualstudio.com/.
-2. Open this directory in Visual Studio Code.
-3. Compile TypeScript to JavaScript: Run the "Terminal > Run Build Task..." menu item,
-    then select "tsc: watch - tsconfig.json". You will have to do this again every time
-    you reopen Visual Studio Code.
-
-That's it! Visual Studio Code will regenerate the JavaScript file every time you save.
+スタイルを変えたいときはコードをいじってください！
